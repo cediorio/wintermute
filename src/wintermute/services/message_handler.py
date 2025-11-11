@@ -1,0 +1,221 @@
+"""Message handler for coordinating chat flow between services."""
+
+from typing import AsyncIterator
+
+from wintermute.models.message import Message, MessageRole
+from wintermute.models.persona import Persona
+from wintermute.services.memory_client import MemoryClient
+from wintermute.services.ollama_client import OllamaClient
+
+
+class MessageHandler:
+    """Handles message flow: retrieve context, generate response, store memory."""
+
+    def __init__(
+        self,
+        ollama_client: OllamaClient,
+        memory_client: MemoryClient,
+        user_id: str,
+    ):
+        """
+        Initialize the MessageHandler.
+
+        Args:
+            ollama_client: Client for Ollama API.
+            memory_client: Client for OpenMemory API.
+            user_id: User ID for memory isolation.
+        """
+        self.ollama = ollama_client
+        self.memory = memory_client
+        self.user_id = user_id
+
+    async def process_message(
+        self,
+        user_message: str,
+        persona: Persona,
+        conversation_history: list[Message],
+    ) -> str:
+        """
+        Process a user message and generate a response.
+
+        Args:
+            user_message: The user's input message.
+            persona: The active persona to use for response generation.
+            conversation_history: Recent conversation messages for context.
+
+        Returns:
+            The generated response text.
+        """
+        # 1. Query relevant memories for context
+        memories = await self.memory.query(
+            user_message, limit=5, user_id=self.user_id
+        )
+
+        # 2. Build context from memories
+        memory_context = self._build_memory_context(memories)
+
+        # 3. Build conversation context
+        conversation_context = self._build_conversation_context(
+            conversation_history
+        )
+
+        # 4. Build full prompt with persona + context
+        full_prompt = self._build_prompt(
+            user_message, memory_context, conversation_context
+        )
+
+        # 5. Generate response from Ollama
+        response = await self.ollama.generate(
+            full_prompt,
+            temperature=persona.temperature,
+            system_prompt=persona.system_prompt,
+        )
+
+        # 6. Store conversation in memory
+        await self._store_conversation(user_message, response)
+
+        return response
+
+    async def process_message_streaming(
+        self,
+        user_message: str,
+        persona: Persona,
+        conversation_history: list[Message],
+    ) -> AsyncIterator[str]:
+        """
+        Process a user message and stream the response.
+
+        Args:
+            user_message: The user's input message.
+            persona: The active persona to use for response generation.
+            conversation_history: Recent conversation messages for context.
+
+        Yields:
+            Response text chunks as they arrive.
+        """
+        # 1. Query memories and build context
+        memories = await self.memory.query(
+            user_message, limit=5, user_id=self.user_id
+        )
+        memory_context = self._build_memory_context(memories)
+        conversation_context = self._build_conversation_context(
+            conversation_history
+        )
+
+        # 2. Build full prompt
+        full_prompt = self._build_prompt(
+            user_message, memory_context, conversation_context
+        )
+
+        # 3. Stream response from Ollama
+        full_response = ""
+        async for chunk in self.ollama.stream(
+            full_prompt,
+            temperature=persona.temperature,
+            system_prompt=persona.system_prompt,
+        ):
+            full_response += chunk
+            yield chunk
+
+        # 4. Store complete conversation in memory
+        await self._store_conversation(user_message, full_response)
+
+    def _build_memory_context(self, memories: list[dict]) -> str:
+        """
+        Build context string from retrieved memories.
+
+        Args:
+            memories: List of memory items with content and scores.
+
+        Returns:
+            Formatted context string.
+        """
+        if not memories:
+            return ""
+
+        context_parts = [
+            f"- {mem['content']}" for mem in memories[:3]
+        ]  # Top 3 most relevant
+        return "Relevant context:\n" + "\n".join(context_parts)
+
+    def _build_conversation_context(
+        self, conversation_history: list[Message]
+    ) -> str:
+        """
+        Build context from recent conversation.
+
+        Args:
+            conversation_history: Recent messages in the conversation.
+
+        Returns:
+            Formatted conversation context.
+        """
+        if not conversation_history:
+            return ""
+
+        # Take last 5 messages for context
+        recent = conversation_history[-5:]
+        context_parts = []
+
+        for msg in recent:
+            role = msg.role.value.capitalize()
+            context_parts.append(f"{role}: {msg.content}")
+
+        return "Recent conversation:\n" + "\n".join(context_parts)
+
+    def _build_prompt(
+        self,
+        user_message: str,
+        memory_context: str,
+        conversation_context: str,
+    ) -> str:
+        """
+        Build the complete prompt for Ollama.
+
+        Args:
+            user_message: The user's current message.
+            memory_context: Context from memories.
+            conversation_context: Context from recent conversation.
+
+        Returns:
+            Complete prompt string.
+        """
+        parts = []
+
+        if memory_context:
+            parts.append(memory_context)
+
+        if conversation_context:
+            parts.append(conversation_context)
+
+        parts.append(f"User: {user_message}")
+
+        return "\n\n".join(parts)
+
+    async def _store_conversation(
+        self, user_message: str, assistant_response: str
+    ) -> None:
+        """
+        Store the conversation in memory.
+
+        Args:
+            user_message: The user's message.
+            assistant_response: The assistant's response.
+        """
+        try:
+            # Store user message
+            await self.memory.store(
+                f"User said: {user_message}",
+                tags=["conversation", "user"],
+                user_id=self.user_id,
+            )
+
+            # Store assistant response
+            await self.memory.store(
+                f"Assistant replied: {assistant_response}",
+                tags=["conversation", "assistant"],
+                user_id=self.user_id,
+            )
+        except Exception:
+            # Don't fail if memory storage fails
+            pass
