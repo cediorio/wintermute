@@ -192,6 +192,9 @@ class WintermuteApp(App):
             ):
                 response_text += chunk
 
+            # Hide typing indicator before showing response
+            chat_pane.hide_typing_indicator()
+
             # Add assistant response to chat
             assistant_message = Message(
                 role=MessageRole.ASSISTANT,
@@ -209,8 +212,7 @@ class WintermuteApp(App):
             chat_pane.add_message(error_message)
 
         finally:
-            # Re-enable input and hide typing indicator
-            chat_pane.hide_typing_indicator()
+            # Re-enable input (typing indicator already hidden above)
             chat_pane.set_input_enabled(True)
 
 

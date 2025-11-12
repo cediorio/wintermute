@@ -115,7 +115,7 @@ class ChatPane(VerticalScroll):
         """Hide the typing indicator."""
         self.is_typing = False
 
-    def _format_message(self, message: Message) -> str:
+    def _format_message(self, message: Message) -> Text:
         """
         Format a message for display.
 
@@ -123,27 +123,30 @@ class ChatPane(VerticalScroll):
             message: The Message to format.
 
         Returns:
-            Formatted message string.
+            Formatted Rich Text object.
         """
-        # Get sender name based on role
+        text = Text()
+        
+        # Get sender name and style based on role
         if message.role == MessageRole.USER:
             sender = "User"
-            style_prefix = "[cyan]"
+            sender_style = "cyan bold"
         elif message.role == MessageRole.ASSISTANT:
-            sender = "Assistant"
-            style_prefix = "[green]"
+            sender = message.metadata.get("persona_name", "Assistant")
+            sender_style = "green bold"
         else:
             sender = "System"
-            style_prefix = "[yellow]"
+            sender_style = "yellow bold"
 
         # Format timestamp
         time_str = message.timestamp.strftime("%H:%M")
 
-        # Use persona name from metadata if available
-        if "persona_name" in message.metadata:
-            sender = message.metadata["persona_name"]
+        # Build the formatted message
+        text.append(f"[{time_str}] ", style="dim")
+        text.append(f"{sender}: ", style=sender_style)
+        text.append(message.content)
 
-        return f"{style_prefix}[{time_str}] {sender}:[/] {message.content}"
+        return text
 
     def _render_messages(self) -> Text:
         """
@@ -160,8 +163,8 @@ class ChatPane(VerticalScroll):
         else:
             for message in self.messages:
                 formatted = self._format_message(message)
-                text.append(formatted + "\n")
-                text.append("\n")  # Add spacing between messages
+                text.append(formatted)
+                text.append("\n\n")  # Add spacing between messages
 
         # Show typing indicator if active
         if self.is_typing:
