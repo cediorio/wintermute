@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  openmemory:
+    image: ghcr.io/caviraoss/openmemory:latest
+    ports:
+      - '8080:8080'
+    environment:
+      # Core Configuration
+      - OM_PORT=8080
+      - OM_MODE=standard
+      - OM_TIER=hybrid
+      - OM_DB_PATH=/data/openmemory.sqlite
+      - OM_API_KEY=
+      
+      # Embeddings - use synthetic for simplicity (no external dependencies)
+      - OM_EMBEDDINGS=synthetic
+      - OM_EMBED_MODE=simple
+      - OM_VEC_DIM=256
+      
+      # Memory & Search
+      - OM_MIN_SCORE=0.3
+      - OM_MAX_PAYLOAD_SIZE=1000000
+      
+      # Metadata & Vector Backend (SQLite for simplicity)
+      - OM_METADATA_BACKEND=sqlite
+      - OM_VECTOR_BACKEND=sqlite
+      
+      # User Summaries
+      - OM_USER_SUMMARY_INTERVAL=30
+      - OM_USE_SUMMARY_ONLY=true
+      
+      # Auto Reflection
+      - OM_AUTO_REFLECT=false
+      
+    volumes:
+      - openmemory_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:8080/health']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+volumes:
+  openmemory_data:
+    driver: local
