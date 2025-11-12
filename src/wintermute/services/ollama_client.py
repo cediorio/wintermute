@@ -1,7 +1,7 @@
 """Ollama API client for LLM interactions."""
 
 import json
-from typing import AsyncIterator, Optional
+from collections.abc import AsyncIterator
 
 from httpx import AsyncClient, ConnectError, TimeoutException
 
@@ -38,8 +38,8 @@ class OllamaClient:
     async def generate(
         self,
         prompt: str,
-        temperature: Optional[float] = None,
-        system_prompt: Optional[str] = None,
+        temperature: float | None = None,
+        system_prompt: str | None = None,
     ) -> str:
         """
         Generate a response from Ollama for the given prompt.
@@ -83,8 +83,8 @@ class OllamaClient:
     async def stream(
         self,
         prompt: str,
-        temperature: Optional[float] = None,
-        system_prompt: Optional[str] = None,
+        temperature: float | None = None,
+        system_prompt: str | None = None,
     ) -> AsyncIterator[str]:
         """
         Stream a response from Ollama for the given prompt.
@@ -106,7 +106,6 @@ class OllamaClient:
             "stream": True,
         }
 
-        # Add optional parameters
         if temperature is not None or system_prompt is not None:
             if temperature is not None:
                 payload["options"] = {"temperature": temperature}

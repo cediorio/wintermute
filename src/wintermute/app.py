@@ -74,18 +74,18 @@ class WintermuteApp(App):
     def __init__(self):
         """Initialize the Wintermute application."""
         super().__init__()
-        
+
         # Load configuration
         self.config = Config()
-        
+
         # Initialize services
         self.ollama_client = OllamaClient(self.config)
         self.memory_client = MemoryClient(self.config)
-        
+
         # Initialize persona manager
         personas_dir = Path(__file__).parent.parent.parent / "personas"
         self.persona_manager = PersonaManager(personas_dir)
-        
+
         # Initialize message handler
         self.message_handler = MessageHandler(
             self.ollama_client,
@@ -109,10 +109,7 @@ class WintermuteApp(App):
             yield ChatPane()
 
         with Vertical(id="right-container"):
-            yield PersonaPane(
-                self.persona_manager.get_all_personas(),
-                id="persona-pane"
-            )
+            yield PersonaPane(self.persona_manager.get_all_personas(), id="persona-pane")
             yield StatusPane(id="status-pane")
 
     async def on_mount(self) -> None:
@@ -124,11 +121,11 @@ class WintermuteApp(App):
         """Check connections to Ollama and OpenMemory."""
         ollama_connected = await self.ollama_client.check_connection()
         memory_connected = await self.memory_client.check_connection()
-        
+
         # Get memory stats
         stats = await self.memory_client.get_stats()
         memory_count = stats.get("total", 0)
-        
+
         # Update status pane
         status_pane = self.query_one(StatusPane)
         status_pane.update_status(
@@ -137,6 +134,14 @@ class WintermuteApp(App):
             memory_count=memory_count,
             model_name=self.config.ollama_model,
         )
+
+    async def _update_memory_count(self) -> None:
+        """Update the memory count in the status pane."""
+        stats = await self.memory_client.get_stats()
+        memory_count = stats.get("total", 0)
+
+        status_pane = self.query_one(StatusPane)
+        status_pane.update_status(memory_count=memory_count)
 
     def action_next_persona(self) -> None:
         """Navigate to next persona."""
@@ -202,6 +207,9 @@ class WintermuteApp(App):
                 metadata={"persona_name": active_persona.name},
             )
             chat_pane.add_message(assistant_message)
+
+            # Update memory count after storing conversation
+            await self._update_memory_count()
 
         except Exception as e:
             # Show error message

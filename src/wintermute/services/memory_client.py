@@ -22,10 +22,10 @@ class MemoryClient:
         self.user_id = config.user_id
 
         # Initialize OpenMemory SDK
-        self._om = OpenMemory(
-            base_url=self.base_url,
-            api_key=self.api_key if self.api_key else None,
-        )
+        if self.api_key:
+            self._om = OpenMemory(base_url=self.base_url, api_key=self.api_key)
+        else:
+            self._om = OpenMemory(base_url=self.base_url)
 
     async def check_connection(self) -> bool:
         """
@@ -61,16 +61,12 @@ class MemoryClient:
         Raises:
             Exception: If storage fails.
         """
-        payload: dict[str, Any] = {
-            "content": content,
-            "user_id": user_id or self.user_id,
-        }
-
-        if tags:
-            payload["tags"] = tags
-
-        response = self._om.add(payload)
-        return response["id"]
+        response = self._om.add(
+            content=content,
+            tags=tags,
+            user_id=user_id or self.user_id,
+        )
+        return str(response["id"])
 
     async def query(
         self,
@@ -90,14 +86,10 @@ class MemoryClient:
             List of matching memories with scores.
         """
         try:
-            payload = {
-                "query": query_text,
-                "top_k": limit,
-                "user_id": user_id or self.user_id,
-            }
-
-            response = self._om.query(payload)
-            return response.get("items", [])
+            filters: dict[str, Any] = {"user_id": user_id or self.user_id}
+            response = self._om.query(query=query_text, k=limit, filters=filters)
+            memories: list[dict[str, Any]] = response.get("matches", [])
+            return memories
         except Exception:
             return []
 
@@ -143,14 +135,11 @@ class MemoryClient:
         """
         try:
             # Query for general user information
-            payload = {
-                "query": "user preferences habits information",
-                "top_k": 10,
-                "user_id": user_id or self.user_id,
-            }
-
-            response = self._om.query(payload)
-            items = response.get("items", [])
+            filters: dict[str, Any] = {"user_id": user_id or self.user_id}
+            response = self._om.query(
+                query="user preferences habits information", k=10, filters=filters
+            )
+            items = response.get("matches", [])
 
             if not items:
                 return "No memories found for this user."
