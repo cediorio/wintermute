@@ -48,8 +48,13 @@ class MemoryPane(Widget):
             text.append("Start chatting to build memories!\n", style="dim")
             return text
 
+        # Sort by timestamp (newest first)
+        sorted_memories = sorted(
+            self.memories, key=lambda m: m.get("last_seen_at", 0), reverse=True
+        )
+
         # Display recent memories (limit to 5 for display, newest first)
-        display_memories = list(reversed(self.memories[:5]))
+        display_memories = sorted_memories[:5]
 
         for memory in display_memories:
             content = memory.get("content", "")
