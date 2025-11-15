@@ -23,13 +23,11 @@ def load_memories_from_json(file_path: str) -> list[dict]:
     [
         {
             "character_id": "default",
-            "content": "User likes jazz music",
-            "tags": ["preferences", "music"]
+            "content": "User likes jazz music"
         },
         {
             "character_id": "technical",
-            "content": "User prefers Python over JavaScript",
-            "tags": ["preferences", "programming"]
+            "content": "User prefers Python over JavaScript"
         }
     ]
 
@@ -129,10 +127,9 @@ async def main():
 
         content = memory["content"]
         character_id = memory["character_id"]
-        tags = memory.get("tags", [])
 
         # Add to OpenMemory
-        success, message = await add_memory(content, character_id, tags)
+        success, message = await add_memory(content, character_id)
 
         if success:
             print(f"[{i}/{len(memories)}] ✅ Added to '{character_id}': {content[:60]}...")
