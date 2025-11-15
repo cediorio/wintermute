@@ -92,6 +92,7 @@ class CharacterWizard(ModalScreen[Character | None]):
                 placeholder="e.g., technical (lowercase, no spaces)",
                 id="id-input",
                 value=self.editing_character.id if self.editing_character else "",
+                disabled=self.is_edit_mode,  # Can't change ID when editing
             )
 
             # Description field
@@ -111,7 +112,9 @@ class CharacterWizard(ModalScreen[Character | None]):
 
             # Temperature field
             yield Label("Temperature:", classes="field-label")
-            temp_value = str(self.editing_character.temperature) if self.editing_character else "0.7"
+            temp_value = (
+                str(self.editing_character.temperature) if self.editing_character else "0.7"
+            )
             yield Input(
                 placeholder="0.0 to 2.0 (default: 0.7)",
                 id="temperature-input",
@@ -120,7 +123,9 @@ class CharacterWizard(ModalScreen[Character | None]):
 
             # Traits field
             yield Label("Traits (comma-separated):", classes="field-label")
-            traits_value = ", ".join(self.editing_character.traits) if self.editing_character else ""
+            traits_value = (
+                ", ".join(self.editing_character.traits) if self.editing_character else ""
+            )
             yield Input(
                 placeholder="e.g., analytical, precise, methodical",
                 id="traits-input",
@@ -197,9 +202,9 @@ class CharacterWizard(ModalScreen[Character | None]):
                 temperature=temperature,
                 traits=traits,
             )
-            
+
             # Return the character to the caller
             self.dismiss(character)
-            
+
         except Exception as e:
             self.notify(f"Error creating character: {e}", severity="error")
