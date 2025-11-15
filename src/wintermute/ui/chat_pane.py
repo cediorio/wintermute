@@ -125,6 +125,14 @@ class ChatPane(VerticalScroll):
         except Exception:
             pass
 
+    def focus_input(self) -> None:
+        """Set focus to the input field."""
+        try:
+            input_widget = self.query_one("#chat-input", Input)
+            input_widget.focus()
+        except Exception:
+            pass
+
     def show_typing_indicator(self) -> None:
         """Show the typing indicator."""
         self.is_typing = True

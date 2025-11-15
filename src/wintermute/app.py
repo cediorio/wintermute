@@ -117,6 +117,10 @@ class WintermuteApp(App):
         # Check service connections
         await self._check_connections()
 
+        # Set initial focus to chat input
+        chat_pane = self.query_one(ChatPane)
+        chat_pane.focus_input()
+
     async def _check_connections(self) -> None:
         """Check connections to Ollama and OpenMemory."""
         ollama_connected = await self.ollama_client.check_connection()
@@ -224,8 +228,9 @@ class WintermuteApp(App):
             chat_pane.add_message(error_message)
 
         finally:
-            # Re-enable input (typing indicator already hidden above)
+            # Re-enable input and restore focus
             chat_pane.set_input_enabled(True)
+            chat_pane.focus_input()
 
 
 def main() -> None:
