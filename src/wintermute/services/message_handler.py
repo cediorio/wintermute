@@ -189,7 +189,7 @@ class MessageHandler:
             await self.memory.store(
                 f"User said: {user_message}",
                 tags=["conversation", "user"],
-                user_id=character.id,
+                user_id=character_id,
             )
 
             # Store assistant response
