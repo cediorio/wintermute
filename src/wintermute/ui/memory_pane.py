@@ -48,16 +48,16 @@ class MemoryPane(Widget):
             text.append("Start chatting to build memories!\n", style="dim")
             return text
 
-        # Display recent memories (limit to 5 for display)
-        display_memories = self.memories[:5]
-        
+        # Display recent memories (limit to 5 for display, newest first)
+        display_memories = list(reversed(self.memories[:5]))
+
         for memory in display_memories:
             content = memory.get("content", "")
-            
+
             # Truncate long content
             if len(content) > 60:
                 content = content[:57] + "..."
-            
+
             # Show timestamp if available
             timestamp = memory.get("last_seen_at")
             if timestamp:
@@ -65,19 +65,19 @@ class MemoryPane(Widget):
                 dt = datetime.fromtimestamp(timestamp / 1000)
                 time_str = dt.strftime("%H:%M")
                 text.append(f"[{time_str}] ", style="dim")
-            
+
             # Show content
             text.append(f"{content}\n", style="white")
-            
+
             # Show tags if available
             tags = memory.get("tags", [])
             if tags:
                 text.append(f"  Tags: {', '.join(tags)}\n", style="dim cyan")
-            
+
             # Show score/salience
             salience = memory.get("salience", 0)
             text.append(f"  Salience: {salience:.2f}\n", style="dim yellow")
-            
+
             text.append("\n")
 
         # Show summary
