@@ -16,6 +16,7 @@ from wintermute.services.ollama_client import OllamaClient
 from wintermute.services.character_manager import CharacterManager
 from wintermute.ui.chat_pane import ChatPane
 from wintermute.ui.character_pane import CharacterPane
+from wintermute.ui.character_wizard import CharacterWizard
 from wintermute.ui.memory_pane import MemoryPane
 from wintermute.ui.status_pane import StatusPane
 from wintermute.utils.config import Config
@@ -79,6 +80,8 @@ class WintermuteApp(App):
         Binding("ctrl+c", "quit", "Quit", priority=True),
         Binding("ctrl+p", "next_character", "Next Character"),
         Binding("ctrl+n", "previous_character", "Previous Character"),
+        Binding("ctrl+a", "add_character", "Add Character"),
+        Binding("ctrl+e", "edit_character", "Edit Character"),
     ]
 
     def __init__(self):
@@ -192,6 +195,49 @@ class WintermuteApp(App):
 
         # Update memory count and memory pane for the new character
         self.call_later(self._update_memory_count)
+
+    async def action_add_character(self) -> None:
+        """Open wizard to create a new character."""
+        result = await self.push_screen_wait(CharacterWizard())
+
+        if result:  # User saved the character
+            try:
+                self.character_manager.create_character(result)
+                self.notify(f"Created character: {result.name}", severity="information")
+
+                # Refresh character pane
+                character_pane = self.query_one(CharacterPane)
+                character_pane.characters = self.character_manager.get_all_characters()
+                character_pane.refresh()
+
+            except ValueError as e:
+                self.notify(str(e), severity="error")
+            except Exception as e:
+                self.notify(f"Failed to create character: {e}", severity="error")
+
+    async def action_edit_character(self) -> None:
+        """Open wizard to edit the selected character."""
+        character_pane = self.query_one(CharacterPane)
+        try:
+            current_character = character_pane.get_selected_character()
+            result = await self.push_screen_wait(CharacterWizard(current_character))
+
+            if result:  # User saved changes
+                try:
+                    self.character_manager.update_character(result)
+                    self.notify(f"Updated character: {result.name}", severity="information")
+
+                    # Refresh character pane
+                    character_pane.characters = self.character_manager.get_all_characters()
+                    character_pane.refresh()
+
+                except ValueError as e:
+                    self.notify(str(e), severity="error")
+                except Exception as e:
+                    self.notify(f"Failed to update character: {e}", severity="error")
+
+        except Exception as e:
+            self.notify(f"Error: {e}", severity="error")
 
     async def on_input_submitted(self, event: Input.Submitted) -> None:
         """

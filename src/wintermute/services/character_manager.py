@@ -46,6 +46,64 @@ class CharacterManager:
         """Reload characters from directory."""
         self.load_characters()
 
+    def create_character(self, character: Character) -> bool:
+        """
+        Create a new character and save to disk.
+
+        Args:
+            character: The Character object to create.
+
+        Returns:
+            True if successful, False otherwise.
+
+        Raises:
+            ValueError: If character ID already exists.
+        """
+        # Check if ID already exists
+        if self.get_character_by_id(character.id):
+            raise ValueError(f"Character with ID '{character.id}' already exists")
+
+        # Save to file
+        character_file = self.characters_dir / f"{character.id}.json"
+        try:
+            with open(character_file, "w") as f:
+                json.dump(character.model_dump(), f, indent=2)
+
+            # Reload characters
+            self.load_characters()
+            return True
+        except Exception as e:
+            raise Exception(f"Failed to save character: {e}")
+
+    def update_character(self, character: Character) -> bool:
+        """
+        Update an existing character and save to disk.
+
+        Args:
+            character: The Character object with updated values.
+
+        Returns:
+            True if successful, False otherwise.
+
+        Raises:
+            ValueError: If character doesn't exist.
+        """
+        # Check if character exists
+        if not self.get_character_by_id(character.id):
+            raise ValueError(f"Character with ID '{character.id}' does not exist")
+
+        # Save to file (overwrites existing)
+        character_file = self.characters_dir / f"{character.id}.json"
+        try:
+            with open(character_file, "w") as f:
+                json.dump(character.model_dump(), f, indent=2)
+
+            # Reload characters
+            self.load_characters()
+            return True
+        except Exception as e:
+            raise Exception(f"Failed to update character: {e}")
+
     def get_character_by_id(self, character_id: str) -> Optional[Character]:
         """
         Get a character by its ID.
