@@ -196,8 +196,12 @@ class WintermuteApp(App):
         # Update memory count and memory pane for the new character
         self.call_later(self._update_memory_count)
 
-    async def action_add_character(self) -> None:
+    def action_add_character(self) -> None:
         """Open wizard to create a new character."""
+        self.run_worker(self._do_add_character)
+
+    async def _do_add_character(self) -> None:
+        """Worker to handle character creation."""
         result = await self.push_screen_wait(CharacterWizard())
 
         if result:  # User saved the character
@@ -215,8 +219,12 @@ class WintermuteApp(App):
             except Exception as e:
                 self.notify(f"Failed to create character: {e}", severity="error")
 
-    async def action_edit_character(self) -> None:
+    def action_edit_character(self) -> None:
         """Open wizard to edit the selected character."""
+        self.run_worker(self._do_edit_character)
+
+    async def _do_edit_character(self) -> None:
+        """Worker to handle character editing."""
         character_pane = self.query_one(CharacterPane)
         try:
             current_character = character_pane.get_selected_character()
