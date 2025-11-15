@@ -40,35 +40,29 @@ class MessageHandler:
 
         Args:
             user_message: The user's input message.
-            character: The active persona to use for response generation.
+            character: The active character to use for response generation.
             conversation_history: Recent conversation messages for context.
 
         Returns:
             The generated response text.
         """
         # 1. Query relevant memories for context
-        memories = await self.memory.query(
-            user_message, limit=5, user_id=self.user_id
-        )
+        memories = await self.memory.query(user_message, limit=5, user_id=self.user_id)
 
         # 2. Build context from memories
         memory_context = self._build_memory_context(memories)
 
         # 3. Build conversation context
-        conversation_context = self._build_conversation_context(
-            conversation_history
-        )
+        conversation_context = self._build_conversation_context(conversation_history)
 
-        # 4. Build full prompt with persona + context
-        full_prompt = self._build_prompt(
-            user_message, memory_context, conversation_context
-        )
+        # 4. Build full prompt with character + context
+        full_prompt = self._build_prompt(user_message, memory_context, conversation_context)
 
         # 5. Generate response from Ollama
         response = await self.ollama.generate(
             full_prompt,
-            temperature=persona.temperature,
-            system_prompt=persona.system_prompt,
+            temperature=character.temperature,
+            system_prompt=character.system_prompt,
         )
 
         # 6. Store conversation in memory
@@ -87,32 +81,26 @@ class MessageHandler:
 
         Args:
             user_message: The user's input message.
-            character: The active persona to use for response generation.
+            character: The active character to use for response generation.
             conversation_history: Recent conversation messages for context.
 
         Yields:
             Response text chunks as they arrive.
         """
         # 1. Query memories and build context
-        memories = await self.memory.query(
-            user_message, limit=5, user_id=self.user_id
-        )
+        memories = await self.memory.query(user_message, limit=5, user_id=self.user_id)
         memory_context = self._build_memory_context(memories)
-        conversation_context = self._build_conversation_context(
-            conversation_history
-        )
+        conversation_context = self._build_conversation_context(conversation_history)
 
         # 2. Build full prompt
-        full_prompt = self._build_prompt(
-            user_message, memory_context, conversation_context
-        )
+        full_prompt = self._build_prompt(user_message, memory_context, conversation_context)
 
         # 3. Stream response from Ollama
         full_response = ""
         async for chunk in self.ollama.stream(
             full_prompt,
-            temperature=persona.temperature,
-            system_prompt=persona.system_prompt,
+            temperature=character.temperature,
+            system_prompt=character.system_prompt,
         ):
             full_response += chunk
             yield chunk
@@ -133,14 +121,10 @@ class MessageHandler:
         if not memories:
             return ""
 
-        context_parts = [
-            f"- {mem['content']}" for mem in memories[:3]
-        ]  # Top 3 most relevant
+        context_parts = [f"- {mem['content']}" for mem in memories[:3]]  # Top 3 most relevant
         return "Relevant context:\n" + "\n".join(context_parts)
 
-    def _build_conversation_context(
-        self, conversation_history: list[Message]
-    ) -> str:
+    def _build_conversation_context(self, conversation_history: list[Message]) -> str:
         """
         Build context from recent conversation.
 
@@ -192,9 +176,7 @@ class MessageHandler:
 
         return "\n\n".join(parts)
 
-    async def _store_conversation(
-        self, user_message: str, assistant_response: str
-    ) -> None:
+    async def _store_conversation(self, user_message: str, assistant_response: str) -> None:
         """
         Store the conversation in memory.
 
