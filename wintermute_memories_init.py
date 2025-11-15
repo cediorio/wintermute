@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """Import memories from wintermute_memories.json into OpenMemory."""
 
+import asyncio
 import json
 import sys
 import time
 from pathlib import Path
 
-import requests
+import httpx
 
 
 # Configuration
@@ -68,7 +69,9 @@ def load_memories_from_json(file_path: str) -> list[dict]:
         sys.exit(1)
 
 
-def add_memory(content: str, character_id: str, tags: list[str] | None = None) -> requests.Response:
+async def add_memory(
+    content: str, character_id: str, tags: list[str] | None = None
+) -> tuple[bool, str]:
     """
     Add a memory to OpenMemory.
 
@@ -78,7 +81,7 @@ def add_memory(content: str, character_id: str, tags: list[str] | None = None) -
         tags: Optional tags for the memory.
 
     Returns:
-        Response object from the API.
+        Tuple of (success: bool, message: str)
     """
     payload = {
         "content": content,
@@ -89,11 +92,20 @@ def add_memory(content: str, character_id: str, tags: list[str] | None = None) -
         payload["tags"] = tags
 
     headers = {"Content-Type": "application/json"}
-    response = requests.post(OPENMEMORY_URL, json=payload, headers=headers)
-    return response
+
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(OPENMEMORY_URL, json=payload, headers=headers)
+
+            if response.status_code == 200:
+                return True, "Success"
+            else:
+                return False, f"{response.status_code} - {response.text}"
+    except Exception as e:
+        return False, str(e)
 
 
-def main():
+async def main():
     """Import memories from JSON file."""
     print(f"Loading memories from {MEMORIES_FILE}...")
     memories = load_memories_from_json(MEMORIES_FILE)
@@ -120,18 +132,18 @@ def main():
         tags = memory.get("tags", [])
 
         # Add to OpenMemory
-        response = add_memory(content, character_id, tags)
+        success, message = await add_memory(content, character_id, tags)
 
-        if response.status_code == 200:
+        if success:
             print(f"[{i}/{len(memories)}] ✅ Added to '{character_id}': {content[:60]}...")
             success_count += 1
         else:
             print(f"[{i}/{len(memories)}] ❌ Failed: {content[:60]}...")
-            print(f"           Error: {response.status_code} - {response.text}")
+            print(f"           Error: {message}")
             error_count += 1
 
         # Small delay to avoid overwhelming the server
-        time.sleep(0.1)
+        await asyncio.sleep(0.1)
 
     print(f"\n{'=' * 60}")
     print(f"Import complete!")
@@ -142,4 +154,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
