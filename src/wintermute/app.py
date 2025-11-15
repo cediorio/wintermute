@@ -187,7 +187,7 @@ class WintermuteApp(App):
 
         try:
             # Get active character
-            active_character = persona_pane.get_selected_character()
+            active_character = character_pane.get_selected_character()
             if not active_character:
                 # Use default if no character selected
                 active_character = self.character_manager.get_all_characters()[0]
