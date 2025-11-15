@@ -1,0 +1,32 @@
+[
+  {
+    "character_id": "default",
+    "content": "User likes jazz music",
+    "tags": ["preferences", "music"]
+  },
+  {
+    "character_id": "default", 
+    "content": "User prefers working in the morning",
+    "tags": ["preferences", "habits"]
+  },
+  {
+    "character_id": "technical",
+    "content": "User is experienced with Python and enjoys functional programming",
+    "tags": ["skills", "programming"]
+  },
+  {
+    "character_id": "technical",
+    "content": "User prefers type-safe languages and TDD methodology",
+    "tags": ["preferences", "programming"]
+  },
+  {
+    "character_id": "creative",
+    "content": "User enjoys writing science fiction and fantasy stories",
+    "tags": ["interests", "writing"]
+  },
+  {
+    "character_id": "creative",
+    "content": "User is inspired by authors like Ursula K. Le Guin and NK Jemisin",
+    "tags": ["influences", "writing"]
+  }
+]
