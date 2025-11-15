@@ -159,11 +159,23 @@ class WintermuteApp(App):
         """Navigate to next character."""
         character_pane = self.query_one(CharacterPane)
         character_pane.next_character()
+        # Clear chat history when switching characters
+        self._clear_chat_for_character_switch()
 
     def action_previous_character(self) -> None:
         """Navigate to previous character."""
         character_pane = self.query_one(CharacterPane)
         character_pane.previous_character()
+        # Clear chat history when switching characters
+        self._clear_chat_for_character_switch()
+
+    def _clear_chat_for_character_switch(self) -> None:
+        """Clear the chat pane and update memory count when switching characters."""
+        chat_pane = self.query_one(ChatPane)
+        chat_pane.clear_messages()
+
+        # Update memory count for the new character
+        self.call_later(self._update_memory_count)
 
     async def on_input_submitted(self, event: Input.Submitted) -> None:
         """
