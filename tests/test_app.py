@@ -6,7 +6,7 @@ import pytest
 
 from wintermute.app import WintermuteApp
 from wintermute.ui.chat_pane import ChatPane
-from wintermute.ui.persona_pane import PersonaPane
+from wintermute.ui.character_pane import CharacterPane
 from wintermute.ui.status_pane import StatusPane
 
 
@@ -47,12 +47,12 @@ class TestWintermuteAppComposition:
 
     @pytest.mark.asyncio
     async def test_app_contains_persona_pane(self):
-        """Test that app contains PersonaPane widget."""
+        """Test that app contains CharacterPane widget."""
         app = WintermuteApp()
         async with app.run_test() as pilot:
             await pilot.pause()
             
-            persona_pane = app.query_one(PersonaPane)
+            persona_pane = app.query_one(CharacterPane)
             assert persona_pane is not None
 
     @pytest.mark.asyncio
@@ -88,13 +88,13 @@ class TestWintermuteAppServices:
             assert app.memory_client is not None
 
     @pytest.mark.asyncio
-    async def test_app_initializes_persona_manager(self):
-        """Test that app initializes PersonaManager."""
+    async def test_app_initializes_character_manager(self):
+        """Test that app initializes CharacterManager."""
         app = WintermuteApp()
         async with app.run_test() as pilot:
             await pilot.pause()
             
-            assert app.persona_manager is not None
+            assert app.character_manager is not None
 
 
 class TestWintermuteAppMounting:
@@ -144,7 +144,7 @@ class TestWintermuteAppLayout:
             
             # App should have the widgets in expected positions
             chat_pane = app.query_one(ChatPane)
-            persona_pane = app.query_one(PersonaPane)
+            persona_pane = app.query_one(CharacterPane)
             status_pane = app.query_one(StatusPane)
             
             assert chat_pane is not None
@@ -165,7 +165,7 @@ class TestWintermuteAppKeyBindings:
 
     @pytest.mark.asyncio
     async def test_app_has_persona_navigation_bindings(self):
-        """Test that app has persona navigation bindings."""
+        """Test that app has character navigation bindings."""
         app = WintermuteApp()
         
         # Check for navigation actions

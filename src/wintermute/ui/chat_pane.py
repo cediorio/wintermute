@@ -158,7 +158,7 @@ class ChatPane(VerticalScroll):
             sender = "User"
             sender_style = "cyan bold"
         elif message.role == MessageRole.ASSISTANT:
-            sender = message.metadata.get("persona_name", "Assistant")
+            sender = message.metadata.get("character_name", "Assistant")
             sender_style = "green bold"
         else:
             sender = "System"

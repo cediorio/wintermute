@@ -7,7 +7,7 @@ from textual.containers import Container, Vertical
 from textual.widgets import Footer, Header
 
 from wintermute.models.message import Message, MessageRole
-from wintermute.models.persona import Persona
+from wintermute.models.character import Character
 from wintermute.ui.chat_pane import ChatPane
 from wintermute.ui.persona_pane import PersonaPane
 from wintermute.ui.status_pane import StatusPane
@@ -34,7 +34,7 @@ class WintermuteDemoApp(App):
         height: 100%;
     }
     
-    #persona-pane {
+    #character-pane {
         height: 60%;
     }
     
@@ -67,28 +67,28 @@ class WintermuteDemoApp(App):
             yield ChatPane(id="chat")
 
         with Vertical(id="right-container"):
-            # Load personas
-            personas = self._load_demo_personas()
-            yield PersonaPane(personas, id="persona-pane")
+            # Load characters
+            characters = self._load_demo_characters()
+            yield PersonaPane(characters, id="character-pane")
             yield StatusPane(id="status-pane")
 
-    def _load_demo_personas(self) -> list[Persona]:
-        """Load personas from JSON files."""
+    def _load_demo_characters(self) -> list[Character]:
+        """Load characters from JSON files."""
         import json
-        personas_dir = Path(__file__).parent / "personas"
-        personas = []
+        characters_dir = Path(__file__).parent / "characters"
+        characters = []
         
-        if personas_dir.exists():
-            for json_file in personas_dir.glob("*.json"):
+        if characters_dir.exists():
+            for json_file in characters_dir.glob("*.json"):
                 try:
                     with open(json_file, "r") as f:
                         data = json.load(f)
-                        persona = Persona.model_validate(data)
-                        personas.append(persona)
+                        character = Character.model_validate(data)
+                        characters.append(character)
                 except Exception:
                     pass
         
-        return personas
+        return characters
 
     async def on_mount(self) -> None:
         """Set up demo data when app mounts."""

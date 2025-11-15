@@ -17,14 +17,14 @@ class TestConfigLoading:
         monkeypatch.setenv("OLLAMA_URL", "http://test:11434")
         monkeypatch.setenv("OLLAMA_MODEL", "test-model")
         monkeypatch.setenv("OPENMEMORY_URL", "http://test:8080")
-        monkeypatch.setenv("DEFAULT_PERSONA", "test-persona")
+        monkeypatch.setenv("DEFAULT_CHARACTER", "test-persona")
         
         config = Config()
         
         assert str(config.ollama_url) == "http://test:11434/"
         assert config.ollama_model == "test-model"
         assert str(config.openmemory_url) == "http://test:8080/"
-        assert config.default_persona == "test-persona"
+        assert config.default_character == "test-persona"
 
     def test_config_loads_from_dotenv_file(self, tmp_path: Path) -> None:
         """Test that config loads from .env file."""
@@ -61,7 +61,7 @@ class TestConfigDefaults:
         """Test that config provides sensible defaults."""
         # Clear any existing env vars
         for key in ["OLLAMA_URL", "OLLAMA_MODEL", "OPENMEMORY_URL", 
-                    "DEFAULT_PERSONA", "MAX_MEMORY_ITEMS", "USER_ID", "DEBUG"]:
+                    "DEFAULT_CHARACTER", "MAX_MEMORY_ITEMS", "USER_ID", "DEBUG"]:
             monkeypatch.delenv(key, raising=False)
         
         config = Config(_env_file=None)
@@ -70,7 +70,7 @@ class TestConfigDefaults:
         assert str(config.ollama_url) == "http://localhost:11434/"
         assert config.ollama_model == "llama2"
         assert str(config.openmemory_url) == "http://localhost:8080/"
-        assert config.default_persona == "default"
+        assert config.default_character == "default"
         assert config.max_memory_items == 100
         assert config.user_id == "default_user"
         assert config.debug is False
@@ -205,7 +205,7 @@ class TestConfigUsage:
         assert hasattr(config, "openmemory_api_key")
         
         # App settings
-        assert hasattr(config, "default_persona")
+        assert hasattr(config, "default_character")
         assert hasattr(config, "max_memory_items")
         assert hasattr(config, "user_id")
         assert hasattr(config, "debug")

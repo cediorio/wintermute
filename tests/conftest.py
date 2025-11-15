@@ -11,18 +11,18 @@ def project_root() -> Path:
 
 
 @pytest.fixture
-def personas_dir(project_root: Path) -> Path:
-    """Return the personas directory."""
-    return project_root / "personas"
+def characters_dir(project_root: Path) -> Path:
+    """Return the characters directory."""
+    return project_root / "characters"
 
 
 @pytest.fixture
 def sample_persona_data() -> dict:
-    """Return sample persona data for testing."""
+    """Return sample character data for testing."""
     return {
         "id": "test",
-        "name": "Test Persona",
-        "description": "A test persona",
+        "name": "Test Character",
+        "description": "A test character",
         "system_prompt": "You are a test assistant.",
         "temperature": 0.7,
         "traits": ["test", "helpful"],

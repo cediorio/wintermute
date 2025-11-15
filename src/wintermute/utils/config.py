@@ -37,9 +37,9 @@ class Config(BaseSettings):
     )
 
     # Application Settings
-    default_persona: str = Field(
+    default_character: str = Field(
         default="default",
-        description="Default persona ID to use on startup",
+        description="Default character ID to use on startup",
     )
     max_memory_items: int = Field(
         default=100,
@@ -71,7 +71,7 @@ class Config(BaseSettings):
             f"ollama_model={self.ollama_model}, "
             f"openmemory_url={self.openmemory_url}, "
             f"openmemory_api_key={'***' if self.openmemory_api_key else None}, "
-            f"default_persona={self.default_persona}, "
+            f"default_character={self.default_character}, "
             f"user_id={self.user_id}, "
             f"debug={self.debug})"
         )

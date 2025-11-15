@@ -3,7 +3,7 @@
 from typing import AsyncIterator
 
 from wintermute.models.message import Message, MessageRole
-from wintermute.models.persona import Persona
+from wintermute.models.character import Character
 from wintermute.services.memory_client import MemoryClient
 from wintermute.services.ollama_client import OllamaClient
 
@@ -32,7 +32,7 @@ class MessageHandler:
     async def process_message(
         self,
         user_message: str,
-        persona: Persona,
+        character: Character,
         conversation_history: list[Message],
     ) -> str:
         """
@@ -40,7 +40,7 @@ class MessageHandler:
 
         Args:
             user_message: The user's input message.
-            persona: The active persona to use for response generation.
+            character: The active persona to use for response generation.
             conversation_history: Recent conversation messages for context.
 
         Returns:
@@ -79,7 +79,7 @@ class MessageHandler:
     async def process_message_streaming(
         self,
         user_message: str,
-        persona: Persona,
+        character: Character,
         conversation_history: list[Message],
     ) -> AsyncIterator[str]:
         """
@@ -87,7 +87,7 @@ class MessageHandler:
 
         Args:
             user_message: The user's input message.
-            persona: The active persona to use for response generation.
+            character: The active persona to use for response generation.
             conversation_history: Recent conversation messages for context.
 
         Yields:

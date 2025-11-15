@@ -1,10 +1,10 @@
-"""Persona model for defining AI personalities."""
+"""Character model for defining AI personalities."""
 
 from pydantic import BaseModel, ConfigDict, Field
 
 
-class Persona(BaseModel):
-    """A persona representing an AI personality with specific traits and behavior."""
+class Character(BaseModel):
+    """A character representing an AI personality with specific traits and behavior."""
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -19,10 +19,10 @@ class Persona(BaseModel):
         }
     )
 
-    id: str = Field(..., description="Unique identifier for the persona")
-    name: str = Field(..., description="Display name of the persona")
-    system_prompt: str = Field(..., description="System prompt that defines persona behavior")
-    description: str = Field(default="", description="Human-readable description of the persona")
+    id: str = Field(..., description="Unique identifier for the character")
+    name: str = Field(..., description="Display name of the character")
+    system_prompt: str = Field(..., description="System prompt that defines character behavior")
+    description: str = Field(default="", description="Human-readable description of the character")
     temperature: float = Field(
         default=0.7,
         ge=0.0,

@@ -1,4 +1,4 @@
-"""Tests for the Persona model."""
+"""Tests for the Character model."""
 
 import json
 from pathlib import Path
@@ -6,49 +6,49 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
-from wintermute.models.persona import Persona
+from wintermute.models.character import Character
 
 
 class TestPersonaCreation:
-    """Test persona creation with valid data."""
+    """Test character creation with valid data."""
 
     def test_persona_creation_with_valid_data_succeeds(
         self, sample_persona_data: dict
     ) -> None:
-        """Test that a persona can be created with valid data."""
-        persona = Persona(**sample_persona_data)
+        """Test that a character can be created with valid data."""
+        character = Character(**sample_persona_data)
 
-        assert persona.id == "test"
-        assert persona.name == "Test Persona"
-        assert persona.description == "A test persona"
-        assert persona.system_prompt == "You are a test assistant."
-        assert persona.temperature == 0.7
-        assert persona.traits == ["test", "helpful"]
+        assert character.id == "test"
+        assert character.name == "Test Character"
+        assert character.description == "A test character"
+        assert character.system_prompt == "You are a test assistant."
+        assert character.temperature == 0.7
+        assert character.traits == ["test", "helpful"]
 
     def test_persona_creation_with_minimal_data_succeeds(self) -> None:
-        """Test that a persona can be created with only required fields."""
-        persona = Persona(
+        """Test that a character can be created with only required fields."""
+        character = Character(
             id="minimal",
-            name="Minimal Persona",
+            name="Minimal Character",
             system_prompt="You are minimal.",
         )
 
-        assert persona.id == "minimal"
-        assert persona.name == "Minimal Persona"
-        assert persona.system_prompt == "You are minimal."
+        assert character.id == "minimal"
+        assert character.name == "Minimal Character"
+        assert character.system_prompt == "You are minimal."
         # Check default values
-        assert persona.temperature == 0.7
-        assert persona.description == ""
-        assert persona.traits == []
+        assert character.temperature == 0.7
+        assert character.description == ""
+        assert character.traits == []
 
 
 class TestPersonaValidation:
-    """Test persona validation rules."""
+    """Test character validation rules."""
 
     def test_persona_creation_missing_id_raises_error(self) -> None:
-        """Test that creating a persona without ID raises validation error."""
+        """Test that creating a character without ID raises validation error."""
         with pytest.raises(ValidationError) as exc_info:
-            Persona(
+            Character(
                 name="Test",
                 system_prompt="Test prompt",
             )
@@ -56,9 +56,9 @@ class TestPersonaValidation:
         assert "id" in str(exc_info.value).lower()
 
     def test_persona_creation_missing_name_raises_error(self) -> None:
-        """Test that creating a persona without name raises validation error."""
+        """Test that creating a character without name raises validation error."""
         with pytest.raises(ValidationError) as exc_info:
-            Persona(
+            Character(
                 id="test",
                 system_prompt="Test prompt",
             )
@@ -66,9 +66,9 @@ class TestPersonaValidation:
         assert "name" in str(exc_info.value).lower()
 
     def test_persona_creation_missing_system_prompt_raises_error(self) -> None:
-        """Test that creating a persona without system_prompt raises validation error."""
+        """Test that creating a character without system_prompt raises validation error."""
         with pytest.raises(ValidationError) as exc_info:
-            Persona(
+            Character(
                 id="test",
                 name="Test",
             )
@@ -79,7 +79,7 @@ class TestPersonaValidation:
         """Test that temperature is validated to be between 0.0 and 2.0."""
         # Temperature too low
         with pytest.raises(ValidationError):
-            Persona(
+            Character(
                 id="test",
                 name="Test",
                 system_prompt="Test",
@@ -88,7 +88,7 @@ class TestPersonaValidation:
         
         # Temperature too high
         with pytest.raises(ValidationError):
-            Persona(
+            Character(
                 id="test",
                 name="Test",
                 system_prompt="Test",
@@ -96,7 +96,7 @@ class TestPersonaValidation:
             )
         
         # Valid boundaries should work
-        persona_low = Persona(
+        persona_low = Character(
             id="test1",
             name="Test",
             system_prompt="Test",
@@ -104,7 +104,7 @@ class TestPersonaValidation:
         )
         assert persona_low.temperature == 0.0
 
-        persona_high = Persona(
+        persona_high = Character(
             id="test2",
             name="Test",
             system_prompt="Test",
@@ -114,86 +114,86 @@ class TestPersonaValidation:
 
 
 class TestPersonaSerialization:
-    """Test persona serialization to/from JSON."""
+    """Test character serialization to/from JSON."""
 
     def test_persona_serialization_to_dict(self, sample_persona_data: dict) -> None:
-        """Test that a persona can be serialized to a dictionary."""
-        persona = Persona(**sample_persona_data)
-        persona_dict = persona.model_dump()
+        """Test that a character can be serialized to a dictionary."""
+        character = Character(**sample_persona_data)
+        persona_dict = character.model_dump()
 
         assert persona_dict["id"] == "test"
-        assert persona_dict["name"] == "Test Persona"
-        assert persona_dict["description"] == "A test persona"
+        assert persona_dict["name"] == "Test Character"
+        assert persona_dict["description"] == "A test character"
         assert persona_dict["system_prompt"] == "You are a test assistant."
         assert persona_dict["temperature"] == 0.7
         assert persona_dict["traits"] == ["test", "helpful"]
 
     def test_persona_serialization_to_json(self, sample_persona_data: dict) -> None:
-        """Test that a persona can be serialized to JSON string."""
-        persona = Persona(**sample_persona_data)
-        persona_json = persona.model_dump_json()
+        """Test that a character can be serialized to JSON string."""
+        character = Character(**sample_persona_data)
+        persona_json = character.model_dump_json()
 
         # Parse back to verify
         parsed = json.loads(persona_json)
         assert parsed["id"] == "test"
-        assert parsed["name"] == "Test Persona"
+        assert parsed["name"] == "Test Character"
 
     def test_persona_deserialization_from_dict(self, sample_persona_data: dict) -> None:
-        """Test that a persona can be created from a dictionary."""
-        persona = Persona.model_validate(sample_persona_data)
+        """Test that a character can be created from a dictionary."""
+        character = Character.model_validate(sample_persona_data)
 
-        assert persona.id == "test"
-        assert persona.name == "Test Persona"
+        assert character.id == "test"
+        assert character.name == "Test Character"
 
     def test_persona_deserialization_from_json(self, sample_persona_data: dict) -> None:
-        """Test that a persona can be created from JSON string."""
+        """Test that a character can be created from JSON string."""
         persona_json = json.dumps(sample_persona_data)
-        persona = Persona.model_validate_json(persona_json)
+        character = Character.model_validate_json(persona_json)
 
-        assert persona.id == "test"
-        assert persona.name == "Test Persona"
+        assert character.id == "test"
+        assert character.name == "Test Character"
 
     def test_persona_roundtrip_serialization(self, sample_persona_data: dict) -> None:
         """Test that serialization and deserialization preserve data."""
-        original = Persona(**sample_persona_data)
+        original = Character(**sample_persona_data)
         
         # Dict roundtrip
         dict_data = original.model_dump()
-        from_dict = Persona.model_validate(dict_data)
+        from_dict = Character.model_validate(dict_data)
         assert original == from_dict
         
         # JSON roundtrip
         json_data = original.model_dump_json()
-        from_json = Persona.model_validate_json(json_data)
+        from_json = Character.model_validate_json(json_data)
         assert original == from_json
 
 
 class TestPersonaDefaultValues:
-    """Test default values for optional persona fields."""
+    """Test default values for optional character fields."""
 
     def test_default_temperature_is_0_7(self) -> None:
         """Test that default temperature is 0.7."""
-        persona = Persona(
+        character = Character(
             id="test",
             name="Test",
             system_prompt="Test",
         )
-        assert persona.temperature == 0.7
+        assert character.temperature == 0.7
 
     def test_default_description_is_empty_string(self) -> None:
         """Test that default description is empty string."""
-        persona = Persona(
+        character = Character(
             id="test",
             name="Test",
             system_prompt="Test",
         )
-        assert persona.description == ""
+        assert character.description == ""
 
     def test_default_traits_is_empty_list(self) -> None:
         """Test that default traits is empty list."""
-        persona = Persona(
+        character = Character(
             id="test",
             name="Test",
             system_prompt="Test",
         )
-        assert persona.traits == []
+        assert character.traits == []

@@ -13,9 +13,9 @@ from wintermute.models.message import Message, MessageRole
 from wintermute.services.memory_client import MemoryClient
 from wintermute.services.message_handler import MessageHandler
 from wintermute.services.ollama_client import OllamaClient
-from wintermute.services.persona_manager import PersonaManager
+from wintermute.services.character_manager import CharacterManager
 from wintermute.ui.chat_pane import ChatPane
-from wintermute.ui.persona_pane import PersonaPane
+from wintermute.ui.character_pane import CharacterPane
 from wintermute.ui.status_pane import StatusPane
 from wintermute.utils.config import Config
 
@@ -41,7 +41,7 @@ class WintermuteApp(App):
         height: 100%;
     }
     
-    #persona-pane {
+    #character-pane {
         height: 60%;
     }
     
@@ -54,7 +54,7 @@ class WintermuteApp(App):
         padding: 1;
     }
     
-    PersonaPane {
+    CharacterPane {
         border: solid cyan;
         padding: 1;
     }
@@ -67,8 +67,8 @@ class WintermuteApp(App):
 
     BINDINGS = [
         Binding("ctrl+c", "quit", "Quit", priority=True),
-        Binding("ctrl+p", "next_persona", "Next Persona"),
-        Binding("ctrl+n", "previous_persona", "Previous Persona"),
+        Binding("ctrl+p", "next_character", "Next Character"),
+        Binding("ctrl+n", "previous_character", "Previous Character"),
     ]
 
     def __init__(self):
@@ -82,9 +82,9 @@ class WintermuteApp(App):
         self.ollama_client = OllamaClient(self.config)
         self.memory_client = MemoryClient(self.config)
 
-        # Initialize persona manager
-        personas_dir = Path(__file__).parent.parent.parent / "personas"
-        self.persona_manager = PersonaManager(personas_dir)
+        # Initialize character manager
+        characters_dir = Path(__file__).parent.parent.parent / "characters"
+        self.character_manager = CharacterManager(characters_dir)
 
         # Initialize message handler
         self.message_handler = MessageHandler(
@@ -109,7 +109,7 @@ class WintermuteApp(App):
             yield ChatPane()
 
         with Vertical(id="right-container"):
-            yield PersonaPane(self.persona_manager.get_all_personas(), id="persona-pane")
+            yield CharacterPane(self.character_manager.get_all_characters(), id="character-pane")
             yield StatusPane(id="status-pane")
 
     async def on_mount(self) -> None:
@@ -147,15 +147,15 @@ class WintermuteApp(App):
         status_pane = self.query_one(StatusPane)
         status_pane.update_status(memory_count=memory_count)
 
-    def action_next_persona(self) -> None:
-        """Navigate to next persona."""
-        persona_pane = self.query_one(PersonaPane)
-        persona_pane.next_persona()
+    def action_next_character(self) -> None:
+        """Navigate to next character."""
+        character_pane = self.query_one(CharacterPane)
+        persona_pane.next_character()
 
-    def action_previous_persona(self) -> None:
-        """Navigate to previous persona."""
-        persona_pane = self.query_one(PersonaPane)
-        persona_pane.previous_persona()
+    def action_previous_character(self) -> None:
+        """Navigate to previous character."""
+        character_pane = self.query_one(CharacterPane)
+        persona_pane.previous_character()
 
     async def on_input_submitted(self, event: Input.Submitted) -> None:
         """
@@ -174,7 +174,7 @@ class WintermuteApp(App):
 
         # Get components
         chat_pane = self.query_one(ChatPane)
-        persona_pane = self.query_one(PersonaPane)
+        character_pane = self.query_one(CharacterPane)
 
         # Add user message to chat
         user_message = Message(role=MessageRole.USER, content=user_input)
@@ -186,11 +186,11 @@ class WintermuteApp(App):
         chat_pane.show_typing_indicator()
 
         try:
-            # Get active persona
-            active_persona = persona_pane.get_selected_persona()
-            if not active_persona:
-                # Use default if no persona selected
-                active_persona = self.persona_manager.get_all_personas()[0]
+            # Get active character
+            active_character = persona_pane.get_selected_character()
+            if not active_character:
+                # Use default if no character selected
+                active_character = self.character_manager.get_all_characters()[0]
 
             # Hide typing indicator and create placeholder message for streaming
             chat_pane.hide_typing_indicator()
@@ -199,7 +199,7 @@ class WintermuteApp(App):
             assistant_message = Message(
                 role=MessageRole.ASSISTANT,
                 content="",
-                metadata={"persona_name": active_persona.name},
+                metadata={"character_name": active_character.name},
             )
             chat_pane.add_message(assistant_message)
 
@@ -207,7 +207,7 @@ class WintermuteApp(App):
             response_text = ""
             async for chunk in self.message_handler.process_message_streaming(
                 user_input,
-                active_persona,
+                active_character,
                 chat_pane.get_all_messages()[-10:],  # Last 10 messages for context
             ):
                 response_text += chunk
