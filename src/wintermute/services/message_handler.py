@@ -15,7 +15,6 @@ class MessageHandler:
         self,
         ollama_client: OllamaClient,
         memory_client: MemoryClient,
-        
     ):
         """
         Initialize the MessageHandler.
@@ -23,11 +22,10 @@ class MessageHandler:
         Args:
             ollama_client: Client for Ollama API.
             memory_client: Client for OpenMemory API.
-            
+
         """
         self.ollama = ollama_client
         self.memory = memory_client
-        
 
     async def process_message(
         self,
@@ -176,7 +174,9 @@ class MessageHandler:
 
         return "\n\n".join(parts)
 
-    async def _store_conversation(self, user_message: str, assistant_response: str, character_id: str) -> None:
+    async def _store_conversation(
+        self, user_message: str, assistant_response: str, character_id: str
+    ) -> None:
         """
         Store the conversation in memory.
 
@@ -196,8 +196,10 @@ class MessageHandler:
             await self.memory.store(
                 f"Assistant replied: {assistant_response}",
                 tags=["conversation", "assistant"],
-                user_id=character.id,
+                user_id=character_id,
             )
-        except Exception:
-            # Don't fail if memory storage fails
-            pass
+        except Exception as e:
+            # Log error but don't fail the conversation
+            import sys
+
+            print(f"⚠️  Memory storage failed: {type(e).__name__}: {e}", file=sys.stderr)
