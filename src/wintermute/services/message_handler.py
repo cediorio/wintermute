@@ -15,7 +15,7 @@ class MessageHandler:
         self,
         ollama_client: OllamaClient,
         memory_client: MemoryClient,
-        user_id: str,
+        
     ):
         """
         Initialize the MessageHandler.
@@ -23,11 +23,11 @@ class MessageHandler:
         Args:
             ollama_client: Client for Ollama API.
             memory_client: Client for OpenMemory API.
-            user_id: User ID for memory isolation.
+            
         """
         self.ollama = ollama_client
         self.memory = memory_client
-        self.user_id = user_id
+        
 
     async def process_message(
         self,
@@ -47,7 +47,7 @@ class MessageHandler:
             The generated response text.
         """
         # 1. Query relevant memories for context
-        memories = await self.memory.query(user_message, limit=5, user_id=self.user_id)
+        memories = await self.memory.query(user_message, limit=5, user_id=character.id)
 
         # 2. Build context from memories
         memory_context = self._build_memory_context(memories)
@@ -66,7 +66,7 @@ class MessageHandler:
         )
 
         # 6. Store conversation in memory
-        await self._store_conversation(user_message, response)
+        await self._store_conversation(user_message, response, character.id)
 
         return response
 
@@ -88,7 +88,7 @@ class MessageHandler:
             Response text chunks as they arrive.
         """
         # 1. Query memories and build context
-        memories = await self.memory.query(user_message, limit=5, user_id=self.user_id)
+        memories = await self.memory.query(user_message, limit=5, user_id=character.id)
         memory_context = self._build_memory_context(memories)
         conversation_context = self._build_conversation_context(conversation_history)
 
@@ -106,7 +106,7 @@ class MessageHandler:
             yield chunk
 
         # 4. Store complete conversation in memory
-        await self._store_conversation(user_message, full_response)
+        await self._store_conversation(user_message, full_response, character.id)
 
     def _build_memory_context(self, memories: list[dict]) -> str:
         """
@@ -176,7 +176,7 @@ class MessageHandler:
 
         return "\n\n".join(parts)
 
-    async def _store_conversation(self, user_message: str, assistant_response: str) -> None:
+    async def _store_conversation(self, user_message: str, assistant_response: str, character_id: str) -> None:
         """
         Store the conversation in memory.
 
@@ -189,14 +189,14 @@ class MessageHandler:
             await self.memory.store(
                 f"User said: {user_message}",
                 tags=["conversation", "user"],
-                user_id=self.user_id,
+                user_id=character.id,
             )
 
             # Store assistant response
             await self.memory.store(
                 f"Assistant replied: {assistant_response}",
                 tags=["conversation", "assistant"],
-                user_id=self.user_id,
+                user_id=character.id,
             )
         except Exception:
             # Don't fail if memory storage fails

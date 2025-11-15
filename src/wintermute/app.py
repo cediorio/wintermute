@@ -90,7 +90,6 @@ class WintermuteApp(App):
         self.message_handler = MessageHandler(
             self.ollama_client,
             self.memory_client,
-            self.config.user_id,
         )
 
     def compose(self) -> ComposeResult:
@@ -140,9 +139,18 @@ class WintermuteApp(App):
         )
 
     async def _update_memory_count(self) -> None:
-        """Update the memory count in the status pane."""
-        stats = await self.memory_client.get_stats()
-        memory_count = stats.get("total", 0)
+        """Update the memory count in the status pane for the active character."""
+        # Get active character
+        character_pane = self.query_one(CharacterPane)
+        try:
+            active_character = character_pane.get_selected_character()
+            # Get stats for this specific character (using character.id as user_id filter)
+            # Note: OpenMemory doesn't have per-user stats, so we query memories
+            memories = await self.memory_client.get_all_for_user(active_character.id)
+            memory_count = len(memories)
+        except Exception:
+            # If we can't get character-specific count, show 0
+            memory_count = 0
 
         status_pane = self.query_one(StatusPane)
         status_pane.update_status(memory_count=memory_count)

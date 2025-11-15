@@ -46,10 +46,6 @@ class Config(BaseSettings):
         gt=0,
         description="Maximum number of memory items to retrieve",
     )
-    user_id: str = Field(
-        default="default_user",
-        description="User ID for memory isolation",
-    )
     debug: bool = Field(
         default=False,
         description="Enable debug mode",
@@ -72,7 +68,6 @@ class Config(BaseSettings):
             f"openmemory_url={self.openmemory_url}, "
             f"openmemory_api_key={'***' if self.openmemory_api_key else None}, "
             f"default_character={self.default_character}, "
-            f"user_id={self.user_id}, "
             f"debug={self.debug})"
         )
 

@@ -19,7 +19,6 @@ class MemoryClient:
         """
         self.base_url = str(config.openmemory_url).rstrip("/")
         self.api_key = config.openmemory_api_key
-        self.user_id = config.user_id
 
         # Initialize OpenMemory SDK
         if self.api_key:
@@ -122,6 +121,30 @@ class MemoryClient:
             return True
         except Exception:
             return False
+
+    async def get_all_for_user(self, user_id: str) -> list[dict[str, Any]]:
+        """
+        Get ALL memories for a specific user/character.
+
+        Args:
+            user_id: The user/character ID to get memories for.
+
+        Returns:
+            List of all memory objects for this user.
+        """
+        try:
+            # Query with high limit to get all memories
+            # Note: OpenMemory doesn't have a direct "get all" API,
+            # so we use query with a very generic search
+            filters: dict[str, Any] = {"user_id": user_id}
+            response = self._om.query(
+                query="",  # Empty query to match everything
+                k=1000,  # High limit to get all
+                filters=filters,
+            )
+            return response.get("matches", [])
+        except Exception:
+            return []
 
     async def get_user_summary(self, user_id: Optional[str] = None) -> str:
         """
