@@ -16,6 +16,7 @@ from wintermute.services.ollama_client import OllamaClient
 from wintermute.services.character_manager import CharacterManager
 from wintermute.ui.chat_pane import ChatPane
 from wintermute.ui.character_pane import CharacterPane
+from wintermute.ui.memory_pane import MemoryPane
 from wintermute.ui.status_pane import StatusPane
 from wintermute.utils.config import Config
 
@@ -42,11 +43,15 @@ class WintermuteApp(App):
     }
     
     #character-pane {
-        height: 60%;
+        height: 30%;
     }
     
     #status-pane {
-        height: 40%;
+        height: 25%;
+    }
+    
+    #memory-pane {
+        height: 45%;
     }
     
     ChatPane {
@@ -61,6 +66,11 @@ class WintermuteApp(App):
     
     StatusPane {
         border: solid yellow;
+        padding: 1;
+    }
+    
+    MemoryPane {
+        border: solid magenta;
         padding: 1;
     }
     """
@@ -110,6 +120,7 @@ class WintermuteApp(App):
         with Vertical(id="right-container"):
             yield CharacterPane(self.character_manager.get_all_characters(), id="character-pane")
             yield StatusPane(id="status-pane")
+            yield MemoryPane(id="memory-pane")
 
     async def on_mount(self) -> None:
         """Called when app is mounted."""
@@ -148,6 +159,10 @@ class WintermuteApp(App):
             # Note: OpenMemory doesn't have per-user stats, so we query memories
             memories = await self.memory_client.get_all_for_user(active_character.id)
             memory_count = len(memories)
+
+            # Update memory pane with recent memories
+            memory_pane = self.query_one(MemoryPane)
+            memory_pane.update_memories(memories, active_character.name)
         except Exception:
             # If we can't get character-specific count, show 0
             memory_count = 0
@@ -174,7 +189,7 @@ class WintermuteApp(App):
         chat_pane = self.query_one(ChatPane)
         chat_pane.clear_messages()
 
-        # Update memory count for the new character
+        # Update memory count and memory pane for the new character
         self.call_later(self._update_memory_count)
 
     async def on_input_submitted(self, event: Input.Submitted) -> None:
