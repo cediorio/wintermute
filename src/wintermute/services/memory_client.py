@@ -60,10 +60,13 @@ class MemoryClient:
         Raises:
             Exception: If storage fails.
         """
+        if not user_id:
+            raise ValueError("user_id (character_id) is required for storing memories")
+
         response = self._om.add(
             content=content,
             tags=tags,
-            user_id=user_id or self.user_id,
+            user_id=user_id,
         )
         return str(response["id"])
 
@@ -79,13 +82,16 @@ class MemoryClient:
         Args:
             query_text: The query text to search for.
             limit: Maximum number of results to return.
-            user_id: Optional user_id to filter by (defaults to config user_id).
+            user_id: User ID (character ID) to filter by - REQUIRED.
 
         Returns:
             List of matching memories with scores.
         """
         try:
-            filters: dict[str, Any] = {"user_id": user_id or self.user_id}
+            if not user_id:
+                return []
+
+            filters: dict[str, Any] = {"user_id": user_id}
             response = self._om.query(query=query_text, k=limit, filters=filters)
             memories: list[dict[str, Any]] = response.get("matches", [])
             return memories
@@ -157,8 +163,11 @@ class MemoryClient:
             A text summary of the user's memories.
         """
         try:
+            if not user_id:
+                return "No memories found for this user."
+
             # Query for general user information
-            filters: dict[str, Any] = {"user_id": user_id or self.user_id}
+            filters: dict[str, Any] = {"user_id": user_id}
             response = self._om.query(
                 query="user preferences habits information", k=10, filters=filters
             )
