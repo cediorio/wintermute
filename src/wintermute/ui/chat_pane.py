@@ -19,12 +19,13 @@ class ChatPane(VerticalScroll):
     def __init__(self, **kwargs):
         """
         Initialize the ChatPane.
-        
+
         Args:
             **kwargs: Additional keyword arguments for Widget.
         """
         super().__init__(**kwargs)
         self.messages: list[Message] = []
+        self._chunk_count = 0  # Track chunks for throttled updates
 
     def compose(self) -> ComposeResult:
         """Compose the chat pane with message display and input."""
@@ -40,6 +41,23 @@ class ChatPane(VerticalScroll):
         """
         self.messages.append(message)
         self._update_display()
+
+    def update_last_message(self, content: str, force: bool = False) -> None:
+        """
+        Update the content of the last message (for streaming).
+
+        Args:
+            content: The new content for the last message.
+            force: Force update even if throttling would skip it.
+        """
+        if self.messages:
+            self.messages[-1].content = content
+            self._chunk_count += 1
+
+            # Update display every 3 chunks or on force (reduces flicker)
+            if force or self._chunk_count % 3 == 0:
+                self._update_display()
+                self.scroll_end(animate=False)
 
     def _update_display(self) -> None:
         """Update the message display."""
@@ -126,7 +144,7 @@ class ChatPane(VerticalScroll):
             Formatted Rich Text object.
         """
         text = Text()
-        
+
         # Get sender name and style based on role
         if message.role == MessageRole.USER:
             sender = "User"

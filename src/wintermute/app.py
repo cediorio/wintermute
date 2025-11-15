@@ -188,7 +188,18 @@ class WintermuteApp(App):
                 # Use default if no persona selected
                 active_persona = self.persona_manager.get_all_personas()[0]
 
-            # Process message and stream response
+            # Hide typing indicator and create placeholder message for streaming
+            chat_pane.hide_typing_indicator()
+
+            # Create initial assistant message (empty content)
+            assistant_message = Message(
+                role=MessageRole.ASSISTANT,
+                content="",
+                metadata={"persona_name": active_persona.name},
+            )
+            chat_pane.add_message(assistant_message)
+
+            # Stream response chunks and update message in real-time
             response_text = ""
             async for chunk in self.message_handler.process_message_streaming(
                 user_input,
@@ -196,17 +207,10 @@ class WintermuteApp(App):
                 chat_pane.get_all_messages()[-10:],  # Last 10 messages for context
             ):
                 response_text += chunk
+                chat_pane.update_last_message(response_text)
 
-            # Hide typing indicator before showing response
-            chat_pane.hide_typing_indicator()
-
-            # Add assistant response to chat
-            assistant_message = Message(
-                role=MessageRole.ASSISTANT,
-                content=response_text,
-                metadata={"persona_name": active_persona.name},
-            )
-            chat_pane.add_message(assistant_message)
+            # Final update to ensure complete message is displayed
+            chat_pane.update_last_message(response_text, force=True)
 
             # Update memory count after storing conversation
             await self._update_memory_count()
