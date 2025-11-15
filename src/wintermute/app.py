@@ -150,12 +150,12 @@ class WintermuteApp(App):
     def action_next_character(self) -> None:
         """Navigate to next character."""
         character_pane = self.query_one(CharacterPane)
-        persona_pane.next_character()
+        character_pane.next_character()
 
     def action_previous_character(self) -> None:
         """Navigate to previous character."""
         character_pane = self.query_one(CharacterPane)
-        persona_pane.previous_character()
+        character_pane.previous_character()
 
     async def on_input_submitted(self, event: Input.Submitted) -> None:
         """
