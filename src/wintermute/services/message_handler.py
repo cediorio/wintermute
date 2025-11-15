@@ -108,7 +108,7 @@ class MessageHandler:
             yield chunk
 
         # 4. Store complete conversation in memory
-        await self._store_conversation(user_message, full_response, character.id)
+                    await self._store_conversation(user_message, full_response, character.id)
 
     def _build_memory_context(self, memories: list[dict]) -> str:
         """
