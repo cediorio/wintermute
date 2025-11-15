@@ -158,6 +158,10 @@ class CharacterWizard(ModalScreen[Character | None]):
 
     async def _save_character(self) -> None:
         """Validate and save the character."""
+        import sys
+
+        print("🔧 [DEBUG] _save_character called", file=sys.stderr)
+
         # Get field values
         name = self.query_one("#name-input", Input).value.strip()
         char_id = self.query_one("#id-input", Input).value.strip()
@@ -165,6 +169,9 @@ class CharacterWizard(ModalScreen[Character | None]):
         system_prompt = self.query_one("#system-prompt-input", TextArea).text.strip()
         temperature_str = self.query_one("#temperature-input", Input).value.strip()
         traits_str = self.query_one("#traits-input", Input).value.strip()
+
+        print(f"🔧 [DEBUG] Fields - name: {name}, id: {char_id}", file=sys.stderr)
+        print(f"🔧 [DEBUG] System prompt length: {len(system_prompt)}", file=sys.stderr)
 
         # Validate required fields
         if not name:
@@ -177,6 +184,7 @@ class CharacterWizard(ModalScreen[Character | None]):
 
         if not system_prompt:
             self.notify("System prompt is required", severity="error")
+            print("🔧 [DEBUG] Validation failed: empty system prompt", file=sys.stderr)
             return
 
         # Validate and parse temperature
@@ -203,8 +211,14 @@ class CharacterWizard(ModalScreen[Character | None]):
                 traits=traits,
             )
 
+            print(
+                f"🔧 [DEBUG] Character object created, dismissing with: {character.name}",
+                file=sys.stderr,
+            )
+
             # Return the character to the caller
             self.dismiss(character)
 
         except Exception as e:
+            print(f"🔧 [DEBUG] Exception creating character: {e}", file=sys.stderr)
             self.notify(f"Error creating character: {e}", severity="error")
