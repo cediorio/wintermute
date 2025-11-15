@@ -46,6 +46,16 @@ class Config(BaseSettings):
         gt=0,
         description="Maximum number of memory items to retrieve",
     )
+    global_system_prompt: str = Field(
+        default=(
+            "You are engaging in a conversation as a character with a distinct personality. "
+            "While you can be helpful and provide assistance, you are meant to approximate "
+            "talking with a real person with your own perspectives, experiences, and manner of speaking. "
+            "Never break character by saying you are an AI, artificial intelligence, or language model. "
+            "Stay true to your character's personality and background."
+        ),
+        description="Global system prompt prepended to all character prompts",
+    )
     debug: bool = Field(
         default=False,
         description="Enable debug mode",

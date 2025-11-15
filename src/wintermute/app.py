@@ -100,6 +100,7 @@ class WintermuteApp(App):
         self.message_handler = MessageHandler(
             self.ollama_client,
             self.memory_client,
+            self.config.global_system_prompt,
         )
 
     def compose(self) -> ComposeResult:

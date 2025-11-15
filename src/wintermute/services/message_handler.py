@@ -15,6 +15,7 @@ class MessageHandler:
         self,
         ollama_client: OllamaClient,
         memory_client: MemoryClient,
+        global_system_prompt: str,
     ):
         """
         Initialize the MessageHandler.
@@ -22,10 +23,11 @@ class MessageHandler:
         Args:
             ollama_client: Client for Ollama API.
             memory_client: Client for OpenMemory API.
-
+            global_system_prompt: Global prompt prepended to all character prompts.
         """
         self.ollama = ollama_client
         self.memory = memory_client
+        self.global_system_prompt = global_system_prompt
 
     async def process_message(
         self,
@@ -56,11 +58,12 @@ class MessageHandler:
         # 4. Build full prompt with character + context
         full_prompt = self._build_prompt(user_message, memory_context, conversation_context)
 
-        # 5. Generate response from Ollama
+        # 5. Generate response from Ollama with combined system prompt
+        combined_system_prompt = f"{self.global_system_prompt}\n\n{character.system_prompt}"
         response = await self.ollama.generate(
             full_prompt,
             temperature=character.temperature,
-            system_prompt=character.system_prompt,
+            system_prompt=combined_system_prompt,
         )
 
         # 6. Store conversation in memory
@@ -93,12 +96,13 @@ class MessageHandler:
         # 2. Build full prompt
         full_prompt = self._build_prompt(user_message, memory_context, conversation_context)
 
-        # 3. Stream response from Ollama
+        # 3. Stream response from Ollama with combined system prompt
+        combined_system_prompt = f"{self.global_system_prompt}\n\n{character.system_prompt}"
         full_response = ""
         async for chunk in self.ollama.stream(
             full_prompt,
             temperature=character.temperature,
-            system_prompt=character.system_prompt,
+            system_prompt=combined_system_prompt,
         ):
             full_response += chunk
             yield chunk
