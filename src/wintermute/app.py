@@ -10,10 +10,12 @@ from textual.widgets import Footer, Header
 from textual.widgets import Input
 
 from wintermute.models.message import Message, MessageRole
+from wintermute.services.audio_service import AudioService
 from wintermute.services.memory_client import MemoryClient
 from wintermute.services.message_handler import MessageHandler
 from wintermute.services.ollama_client import OllamaClient
 from wintermute.services.character_manager import CharacterManager
+from wintermute.services.voice_client import VoiceClient, VOICE_AVAILABLE
 from wintermute.ui.chat_pane import ChatPane
 from wintermute.ui.character_pane import CharacterPane
 from wintermute.ui.character_wizard import CharacterWizard
@@ -82,6 +84,7 @@ class WintermuteApp(App):
         Binding("ctrl+n", "previous_character", "Previous Character"),
         Binding("ctrl+a", "add_character", "Add Character"),
         Binding("ctrl+e", "edit_character", "Edit Character"),
+        Binding("ctrl+r", "voice_input", "Voice Input", priority=True),
     ]
 
     def __init__(self):
@@ -105,6 +108,20 @@ class WintermuteApp(App):
             self.memory_client,
             self.config.global_system_prompt,
         )
+
+        # Initialize voice services (if available)
+        self.voice_available = VOICE_AVAILABLE
+        if self.voice_available:
+            try:
+                self.audio_service = AudioService()
+                self.voice_client = VoiceClient()
+            except Exception:
+                self.voice_available = False
+                self.audio_service = None
+                self.voice_client = None
+        else:
+            self.audio_service = None
+            self.voice_client = None
 
     def compose(self) -> ComposeResult:
         """
@@ -319,6 +336,109 @@ class WintermuteApp(App):
 
         finally:
             # Re-enable input and restore focus
+            chat_pane.set_input_enabled(True)
+            chat_pane.focus_input()
+
+    def action_voice_input(self) -> None:
+        """Handle voice input action (Ctrl+V)."""
+        if not self.voice_available:
+            self.notify(
+                "Voice input not available. Install voice dependencies:\n"
+                "pip install sounddevice numpy useful-moonshine-onnx kokoro soundfile",
+                severity="warning",
+                timeout=5,
+            )
+            return
+
+        # Start voice input in background
+        self.run_worker(self._do_voice_input)
+
+    async def _do_voice_input(self) -> None:
+        """Worker to handle voice input."""
+        chat_pane = self.query_one(ChatPane)
+
+        try:
+            # Notify user to start speaking
+            self.notify("🎤 Listening... Speak now! (5 seconds)", timeout=5)
+
+            # Record audio
+            audio_data = await self.audio_service.record_audio(duration=5.0)
+
+            # Transcribe
+            self.notify("🧠 Transcribing...", timeout=2)
+            user_input = self.voice_client.transcribe(audio_data, samplerate=16000)
+
+            if not user_input or not user_input.strip():
+                self.notify("❌ No speech detected", severity="warning")
+                return
+
+            self.notify(f'✓ You said: "{user_input}"', timeout=3)
+
+            # Process the transcribed text like keyboard input
+            character_pane = self.query_one(CharacterPane)
+
+            # Add user message to chat
+            user_message = Message(role=MessageRole.USER, content=user_input)
+            chat_pane.add_message(user_message)
+
+            # Disable input during processing
+            chat_pane.set_input_enabled(False)
+            chat_pane.show_typing_indicator()
+
+            try:
+                # Get active character
+                active_character = character_pane.get_selected_character()
+                if not active_character:
+                    active_character = self.character_manager.get_all_characters()[0]
+
+                # Hide typing indicator and create placeholder message
+                chat_pane.hide_typing_indicator()
+
+                # Create initial assistant message
+                assistant_message = Message(
+                    role=MessageRole.ASSISTANT,
+                    content="",
+                    metadata={"character_name": active_character.name},
+                )
+                chat_pane.add_message(assistant_message)
+
+                # Stream response chunks
+                response_text = ""
+                async for chunk in self.message_handler.process_message_streaming(
+                    user_input,
+                    active_character,
+                    chat_pane.get_all_messages()[-10:],
+                ):
+                    response_text += chunk
+                    chat_pane.update_last_message(response_text)
+
+                # Final update
+                chat_pane.update_last_message(response_text, force=True)
+
+                # Update memory count
+                await self._update_memory_count()
+
+                # Optional: Speak the response
+                # Uncomment to enable TTS response
+                # self.notify("🔊 Speaking response...", timeout=2)
+                # speech_audio = await self.voice_client.synthesize(response_text)
+                # if len(speech_audio) > 0:
+                #     await self.audio_service.play_audio(speech_audio, samplerate=24000)
+
+            except Exception as e:
+                error_message = Message(
+                    role=MessageRole.SYSTEM,
+                    content=f"Error: {str(e)}",
+                )
+                chat_pane.add_message(error_message)
+
+            finally:
+                # Re-enable input
+                chat_pane.set_input_enabled(True)
+                chat_pane.focus_input()
+
+        except Exception as e:
+            self.notify(f"❌ Voice input error: {str(e)}", severity="error", timeout=5)
             chat_pane.set_input_enabled(True)
             chat_pane.focus_input()
 
